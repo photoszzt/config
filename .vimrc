@@ -36,7 +36,6 @@ Plug 'autozimu/LanguageClient-neovim', {
 Plug 'mattn/webapi-vim'
 Plug 'ncm2/ncm2'
 Plug 'roxma/nvim-yarp'
-"Plug 'roxma/nvim-cm-racer'
 Plug 'junegunn/vader.vim'
 
 " Completion plugins
@@ -56,7 +55,6 @@ Plug 'cespare/vim-toml'
 " Plugin 'lervag/vim-latex'
 Plug 'rust-lang/rust.vim'
 Plug 'fatih/vim-go'
-Plug 'dag/vim-fish'
 Plug 'godlygeek/tabular'
 Plug 'plasticboy/vim-markdown'
 
@@ -144,8 +142,8 @@ let g:LanguageClient_settingsPath = "~/.vim/settings.json"
 let g:LanguageClient_serverCommands = {
     \ 'rust': ['env', 'CARGO_TARGET_DIR=~/.cargo/bin/rls', 'rls'],
     \ 'python': ['~/.local/bin/pyls'],
-    \ 'cpp': ['clangd'],
-    \ 'c': ['clangd'],
+    \ 'cpp': ['/usr/bin/clangd-6.0'],
+    \ 'c': ['/usr/bin/clangd-6.0'],
     \ }
 let g:LanguageClient_autoStart = 1
 nnoremap <silent> K :call LanguageClient_textDocument_hover()<CR>
