@@ -49,8 +49,6 @@ Plug 'ncm2/ncm2-path'
 Plug 'Shougo/echodoc.vim'
 
 " Syntactic language support
-" Plugin '~/dev/projects/simio', {'rtp': 'src/vim-syntax/'}
-Plug '~/dev/projects/api-soup', {'rtp': 'vim-syntax/'}
 " Plugin 'vim-scripts/gnuplot-syntax-highlighting'
 " Plugin 'treycordova/rustpeg.vim.git'
 " Plugin 'vim-scripts/haskell.vim'
@@ -142,9 +140,12 @@ nmap <leader>w :w<CR>
 let g:localvimrc_ask = 0
 
 " language server protocol
-let g:LanguageClient_settingsPath = "/home/jon/.vim/settings.json"
+let g:LanguageClient_settingsPath = "~/.vim/settings.json"
 let g:LanguageClient_serverCommands = {
-    \ 'rust': ['env', 'CARGO_TARGET_DIR=/data/jon/cargo-target/rls', 'rls'],
+    \ 'rust': ['env', 'CARGO_TARGET_DIR=~/.cargo/bin/rls', 'rls'],
+    \ 'python': ['~/.local/bin/pyls'],
+    \ 'cpp': ['clangd'],
+    \ 'c': ['clangd'],
     \ }
 let g:LanguageClient_autoStart = 1
 nnoremap <silent> K :call LanguageClient_textDocument_hover()<CR>
@@ -177,10 +178,8 @@ let mysyntaxfile='~/.vim/doxygen_load.vim'
 let g:go_play_open_browser = 0
 let g:go_fmt_fail_silently = 1
 let g:go_fmt_command = "goimports"
-let g:go_bin_path = expand("~/dev/go/bin")
+let g:go_bin_path = expand("~/go/bin")
 
-" Don't gofmt Biscuit (yet)
-autocmd BufRead,BufNewFile /home/jon/dev/others/biscuit/** let [g:go_fmt_command, g:go_fmt_autosave]=["", 0]
 
 " =============================================================================
 " # Editor settings
