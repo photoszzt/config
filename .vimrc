@@ -1,434 +1,422 @@
-set shell=/bin/bash
-let mapleader = "\<Space>"
+set hidden            " Hide abandoned buffers, don't unload
+set mouse=            " Disable mouse
+set history=10000     " Long command history
+set viminfo='500,"500 " Long mark history
+set encoding=utf-8    " Use UTF-8 in Vim
+set shortmess+=I      " Disable splash screen
+set clipboard=unnamed " Use secondary clipboard (register '*') by default
 
-" =============================================================================
-" # PLUGINS
-" =============================================================================
-" Load vundle
-set nocompatible
-filetype off
+set noswapfile       " Don't use swap files
+set nobackup         " Don't use backup files
+set undofile         " Keep persistent undo
+set undodir=/tmp     " Where to store undo files
+set undolevels=10000 " Long undo history
+
+set number               " Show number line
+set confirm              " Ask to save changes
+set wildmenu             " Better command completion
+set wildignorecase       " Ignore case in command completion
+set completeopt-=preview " Disable annoying popup window when autocompleting
+set laststatus=2         " Always show statusline
+
+set nowrap                 " Don't wrap lines
+set whichwrap+=<,>,[,],h,l " Arrow keys and h/l wrap over lines
+set backspace=2            " Backspace wraps over lines
+
+set scrolloff=2       " Keep a few lines above/below cursor
+set sidescrolloff=2   " Keep a few columns left/right of the cursor
+set sidescroll=1      " Scroll horizontally by one column
+set display+=lastline " Show as much as possible of the last line
+
+set timeout timeoutlen=500  " Timeout between key combos
+set ttimeout ttimeoutlen=50 " No idea what this does, but keep it
+
+set ignorecase " Case insensitive search
+set smartcase  " If an uppercase letter is the query, be case sensitive
+set incsearch  " Highlight matches while typing query
+set hlsearch   " Highlight all search matches
+
+set expandtab          " Expand Tab key to spaces
+set tabstop=4          " Number of spaces Tab key expands to
+set smarttab           " Apply tabs in front of a line according to shiftwidth
+set shiftwidth=4       " Number of spaces for each step of (auto)indent
+set autoindent         " Automatically indent when starting a new line
+set list               " Enable list mode
+set listchars=tab:\ \  " Represent tab character as spaces
+
+" Statusline format
+function! VCStatusLine()
+  let branch = fugitive#head()
+  return empty(branch) ? '' : '(' . branch . ')  '
+endfunction
+function! LintStatusLine() abort
+  let l:counts = ale#statusline#Count(bufnr(''))
+  let l:errors = l:counts.error + l:counts.style_error
+  let l:warnings = l:counts.total - l:errors
+  return l:counts.total == 0 ? 'OK' : printf('%dE %dW', l:errors, l:warnings)
+endfunction
+set stl=\                                 " Start with a space
+set stl+=%1*%{!empty(@%)?@%:&ro?'':'~'}\  " Color 1: File name or ~ if empty
+set stl+=%2*%{&mod?'++':'\ \ '}\ \        " Color 2: Add ++ if modified
+set stl+=%3*%{VCStatusLine()}             " Color 3: Version control
+set stl+=%3*%{LintStatusLine()}           " Color 3: Linter
+set stl+=\ %3*\ %=%-7.(%l,%c%V%)          " Color 3: Row & column
+set stl+=\                                " Extra space
+
+
+" Fix weird quickfix statusline
+autocmd BufNewFile,BufWinEnter quickfix
+  \   let &l:stl = '%1* quickfix%3*%=%-14.(%l,%c%V%)%P '
+  \ | nnoremap <silent><buffer> q :cclose<CR>
+
+" Opening a new line after a comment doesn't start a new comment
+autocmd BufNewFile,BufWinEnter *
+  \ setl formatoptions-=o
+
+" Convenience mapping for colon
+noremap ; :
+
+" Disable ex mode
+nnoremap Q <nop>
+
+" Extended yank/paste mappings
+noremap Y y$
+noremap <space>Y "+y$
+noremap <space>y "+y
+noremap <space>y "+y
+noremap <silent> <space>p :set paste<CR>"+p:set nopaste<CR>
+noremap <silent> <space>P :set paste<CR>"+P:set nopaste<CR>
+
+" j/k moves up/down row by row, not line by line
+noremap j gj
+noremap k gk
+
+" Fast jumping up/down
+noremap J 5gj
+noremap K 5gk
+
+" Stay in visual mode when shifting indentation
+xnoremap < <gv
+xnoremap > >gv
+
+" Switch to last used buffer
+nnoremap <BS> <C-^>
+
+" Move to next window
+nnoremap <silent> <C-n> <C-w><C-w>
+
+" Quick save
+nnoremap <silent> <space>w :update<CR>
+inoremap <silent> <C-s>    <C-O>:update<cr>
+noremap  <silent> <C-s>    :update<cr>
+
+" Redraw and clear highlighted search matches
+noremap <silent> <C-l> :nohl<CR><C-l>
+
+" Remove trailing whitespace from all lines in the buffer
+command! TrimBuffer %s/\s\+$//
+
+" Netrw settings
+autocmd FileType netrw
+  \ noremap <buffer><nowait> q :bd<CR>
+let g:netrw_banner = 0
+let g:netrw_browsex_viewer = 'xdg-open'
+
+" Help settings
+autocmd FileType help
+  \ noremap <buffer><nowait> q :q<CR>
+
+" Complete braces on <CR> in a sensible way
+function! s:complete_braces()
+  let line = getline('.')
+  let col = col('.')
+  if col < 1000 && col == len(line) + 1 && matchstr(line, '\%' . (col-1) . 'c.') == '{'
+    return "}\<C-o>k\<C-o>A\<CR>"
+  endif
+  return ""
+endfunction
+inoremap <buffer><expr><CR> "\<CR>" . <SID>complete_braces()
+
+" Start ranger and open the chosen file
+function! s:ranger()
+  exec "silent !ranger --choosefiles=/tmp/chosenfile --selectfile="
+        \ . expand("%:p")
+  if filereadable('/tmp/chosenfile')
+    exec system('sed -ie "s/ /\\\ /g" /tmp/chosenfile')
+    exec 'argadd ' . system('cat /tmp/chosenfile | tr "\\n" " "')
+    exec 'edit ' . system('head -n1 /tmp/chosenfile')
+    call system('rm -f /tmp/chosenfile')
+  endif
+  redraw!
+endfunction
+nnoremap <silent> - :call <SID>ranger()<CR>
+
+" Show buffer outline
+function! s:outline_format(lists)
+  for list in a:lists
+    let linenr = list[2][:len(list[2])-3]
+    let line = getline(linenr)
+    let idx = stridx(line, list[0])
+    let len = len(list[0])
+    let fg = synIDattr(synIDtrans(hlID("LineNr")), 'fg', 'cterm')
+    let bg = synIDattr(synIDtrans(hlID("LineNr")), 'bg', 'cterm')
+    let list[0] = ''
+          \ . printf("\x1b[%sm %4d \x1b[m ", '38;5;'.fg.';48;5;'.bg, linenr)
+          \ . line[:idx-1]
+          \ . printf("\x1b[%sm%s\x1b[m", "34", line[idx:idx+len-1])
+          \ . line[idx+len:]
+    let list = list[:2]
+  endfor
+  return a:lists
+endfunction
+function! s:outline_source(tag_cmds)
+  if !filereadable(expand('%'))
+    throw 'Save the file first'
+  endif
+  for cmd in a:tag_cmds
+    let lines = split(system(cmd), "\n")
+    if !v:shell_error
+      break
+    endif
+  endfor
+  if v:shell_error
+    throw get(lines, 0, 'Failed to extract tags')
+  elseif empty(lines)
+    throw 'No tags found'
+  endif
+  return map(s:outline_format(map(lines, 'split(v:val, "\t")')), 'join(v:val, "\t")')
+endfunction
+function! s:outline_sink(lines)
+  if !empty(a:lines)
+    let line = a:lines[0]
+    execute split(line, "\t")[2]
+  endif
+endfunction
+function! s:outline(...)
+  let args = copy(a:000)
+  let tag_cmds = [
+    \ printf('ctags -f - --sort=no --excmd=number --language-force=%s %s 2>/dev/null', &filetype, expand('%:S')),
+    \ printf('ctags -f - --sort=no --excmd=number %s 2>/dev/null', expand('%:S'))]
+  try
+    return fzf#run(fzf#wrap('outline', {
+      \ 'source':  s:outline_source(tag_cmds),
+      \ 'sink*':   function('s:outline_sink'),
+      \ 'options': '--tiebreak=index --reverse +m -d "\t" --with-nth=1 -n 1 --ansi --extended --prompt "Outline> "'}))
+  catch
+    echohl WarningMsg
+    echom v:exception
+    echohl None
+  endtry
+endfunction
+command! -bang Outline call s:outline()
+nnoremap <silent> <space>o :Outline<CR>
+
+" Refresh - useful when things go wrong
+function! s:refresh()
+  silent! call mkdir(fnamemodify(tempname(), ":p:h"), "", 0700)
+  set nohlsearch
+  redraw
+  redrawstatus
+endfunction
+command! -bang Refresh call s:refresh()
+nnoremap <silent> <space>r :Refresh<CR>
+
+
 call plug#begin('~/.vim/plugged')
 
-" Load plugins
-" VIM enhancements
-Plug 'ciaranm/securemodelines'
-Plug 'vim-scripts/localvimrc'
-Plug 'justinmk/vim-sneak'
+Plug 'ConradIrwin/vim-bracketed-paste' " Smarter pasting into vim
+Plug 'dietsche/vim-lastplace'          " Save cursor positing in buffer
+Plug 'adelarsq/vim-matchit'            " Smarter bracket matching
+Plug 'mhinz/vim-signify'               " Show changed lines (VCS-backed)
+Plug 'rbgrouleff/bclose.vim'           " Buffer-close (common dependency)
+Plug 'sheerun/vim-polyglot'            " Language pack
+Plug 'tpope/vim-eunuch'                " Useful file management commands
+Plug 'tpope/vim-repeat'                " Smarter . key
+Plug 'tpope/vim-rsi'                   " Readline style mappings in insert mode
+Plug 'tpope/vim-sleuth'                " Heuristically set buffer options
+Plug 'tpope/vim-unimpaired'            " Pairs of handy [ and ] mappings
 
-" GUI enhancements
-Plug 'itchyny/lightline.vim'
-Plug 'w0rp/ale'
-Plug 'machakann/vim-highlightedyank'
+" Strip modified lines
+Plug 'tweekmonster/wstrip.vim'
+let g:wstrip_auto = 1
+let g:wstrip_highlight = 0
+
+" Color theme
 Plug 'chriskempson/base16-vim'
+let base16colorspace=256
 
-" Fuzzy finder
+" Better tab names
+Plug 'gcmt/taboo.vim'
+let g:taboo_tab_format = " %P%m "
+let g:taboo_renamed_tab_format = " %l%m "
+let g:taboo_modified_tab_flag = " ++"
+let g:taboo_close_tabs_label = "X"
+let g:taboo_unnamed_tab_label = "~"
+
+" Git commands
+Plug 'tpope/vim-fugitive'
+autocmd FileType gitcommit
+  \ setl cursorline
+
+" Automatically change current working directory
 Plug 'airblade/vim-rooter'
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+let g:rooter_patterns = ['.root', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/']
+let g:rooter_use_lcd = 1
+let g:rooter_silent_chdir = 1
+
+" Yank history (use C-p/C-n after pasting)
+Plug 'vim-scripts/YankRing.vim'
+let g:yankring_history_dir = '~/.vim'
+let g:yankring_replace_n_nkey = ''
+
+" Automatic :nohl command
+Plug 'junegunn/vim-slash'
+
+" Quit buffer using :d command
+Plug 'mhinz/vim-sayonara'
+cnoreabbrev <silent><expr> d
+  \ getcmdtype() == ":" && getcmdline() == 'd' ? 'Sayonara!' : 'd'
+
+" Preview search-and-replace
+Plug 'markonm/traces.vim'
+let g:traces_preserve_view_state = 1
+
+" Undo tree
+Plug 'mbbill/undotree'
+noremap U :UndotreeToggle<CR>
+let g:undotree_SetFocusWhenToggle = 1
+let g:undotree_WindowLayout = 3
+
+" Comment line(s) using t key
+Plug 'tomtom/tcomment_vim'
+let g:tcomment_maps = 0
+nnoremap <silent> t :TComment<CR>j
+vnoremap <silent> t :TComment<CR>
+
+" Fuzzy completion
+Plug 'junegunn/fzf', { 'dir': '~/.fzf' }
 Plug 'junegunn/fzf.vim'
+let g:fzf_layout = {}
+let g:fzf_buffers_jump = 1
+nnoremap <silent> <C-j> :Buffers<CR>
+nnoremap <silent> <C-k> :Buffers<CR>
+nnoremap <silent> <space>a :Ag<CR>
+nnoremap <silent> <space>e :Files<CR>
+nnoremap <silent> <space>l :BLines<CR>
+nnoremap <silent> <space>h :History<CR>
+nnoremap <silent> <space>; :Commands<CR>
+nnoremap <silent> <space>: :Commands<CR>
+nnoremap <silent> <space>` :Marks<CR>
 
-" Semantic language support
-"Plug 'phildawes/racer'
-"Plug 'racer-rust/vim-racer'
-Plug 'autozimu/LanguageClient-neovim', {
-    \ 'branch': 'next',
-    \ 'do': 'bash install.sh',
-    \ }
-Plug 'mattn/webapi-vim'
-Plug 'ncm2/ncm2'
-Plug 'roxma/nvim-yarp'
-Plug 'junegunn/vader.vim'
+" Real-time linting
+Plug 'w0rp/ale'
+let g:ale_lint_on_text_changed = 'never'
+let g:ale_lint_on_enter = 0
+let g:ale_cpp_clangcheck_options = '-std=c++14'
+nmap ]w <plug>(ale_next_wrap)
+nmap [w <plug>(ale_previous_wrap)
+hi link ALEError Default
+hi link ALEWarning Default
 
-" Completion plugins
-Plug 'ncm2/ncm2-bufword'
-Plug 'ncm2/ncm2-tmux'
-Plug 'ncm2/ncm2-path'
+" Automatic tag file generation
+Plug 'ludovicchabant/vim-gutentags'
+let g:gutentags_project_root = ['.root']
+let g:gutentags_ctags_exclude = ['*CMakeFiles*', '.ycm_extra_conf.py']
 
-" LanguageClient enhancements
-" Showing function signature and inline doc.
-Plug 'Shougo/echodoc.vim'
+" Completion engine
+Plug 'Valloric/YouCompleteMe',
+      \ { 'do': './install.py --clang-completer --rust-completer' }
+augroup load_ycm
+  " Load plugin when entering insert mode.
+  au! InsertEnter *
+    \   call plug#load('YouCompleteMe')
+    \ | call youcompleteme#Enable()
+    \ | setl formatoptions-=o
+    \ | au! load_ycm
+augroup END
+let g:ycm_confirm_extra_conf = 0
+let g:ycm_show_diagnostics_ui = 0
+let g:ycm_global_ycm_extra_conf = '~/dotfiles/ycm_extra_conf.py'
+let g:ycm_key_list_select_completion = ['<C-n>', '<Down>', '<Tab>']
+let g:ycm_key_list_previous_completion = ['<C-p>', '<Up>', '<S-Tab>']
+map <silent> <space>j :YcmCompleter GoTo<CR>
 
-" Syntactic language support
-" Plugin 'vim-scripts/gnuplot-syntax-highlighting'
-" Plugin 'treycordova/rustpeg.vim.git'
-" Plugin 'vim-scripts/haskell.vim'
-Plug 'cespare/vim-toml'
-" Plugin 'lervag/vim-latex'
+" Vimscript
+Plug 'Shougo/neco-vim'
+
+" Shell scripts
+autocmd FileType sh
+  \ setl sw=4 ts=4 expandtab
+
+" Rust language
 Plug 'rust-lang/rust.vim'
-Plug 'fatih/vim-go'
-Plug 'godlygeek/tabular'
-Plug 'plasticboy/vim-markdown'
+Plug 'racer-rust/vim-racer'
+Plug 'sebastianmarkow/deoplete-rust'
+let g:deoplete#sources#rust#disable_keymap = 1
+let g:racer_experimental_completer = 1
+let g:racer_no_default_keymappings = 1
+let g:tagbar_type_rust = {
+  \   'ctagstype' : 'rust',
+  \   'sort' : '0',
+  \   'kinds' : [ 'm:modules', 'c:consts', 'T:types', 'g:enums',
+  \               's:structs', 't:traits', 'i:impls', 'f:functions' ]
+  \ }
+autocmd FileType rust
+  \   setl colorcolumn=100
+  \ | setl sw=4 ts=4 expandtab
+  \ | compiler cargo
+  \ | inoremap <buffer><expr><CR> "\<CR>" . <SID>complete_braces()
+
+" C++ language
+Plug 'octol/vim-cpp-enhanced-highlight'
+set cinoptions+=g1 " Indent scope declarations by 1 space
+set cinoptions+=h1 " Indent stuff after scope declarations by 1 more space
+autocmd FileType c,cpp
+  \   setl shiftwidth=4 tabstop=4
+
+" Java language
+autocmd FileType java
+  \   setl colorcolumn=100
+
+" Python language
+autocmd FileType python
+  \   setl colorcolumn=79
+
+" Toml configuration language
+autocmd FileType toml
+  \   setl shiftwidth=2 tabstop=2
 
 call plug#end()
 
-runtime macros/matchit.vim
 
-if has('nvim')
-    set guicursor=n-v-c:block-Cursor/lCursor-blinkon0,i-ci:ver25-Cursor/lCursor,r-cr:hor20-Cursor/lCursor
-    set inccommand=nosplit
-    noremap <C-q> :confirm qall<CR>
-end
-
-if !has('gui_running')
-  set t_Co=256
-endif
-
-" Plugin settings
-let g:secure_modelines_allowed_items = [
-                \ "textwidth",   "tw",
-                \ "softtabstop", "sts",
-                \ "tabstop",     "ts",
-                \ "shiftwidth",  "sw",
-                \ "expandtab",   "et",   "noexpandtab", "noet",
-                \ "filetype",    "ft",
-                \ "foldmethod",  "fdm",
-                \ "readonly",    "ro",   "noreadonly", "noro",
-                \ "rightleft",   "rl",   "norightleft", "norl",
-                \ "colorcolumn"
-                \ ]
-
-" Base16
-let base16colorspace=256
-
-" Lightline
-" let g:lightline = { 'colorscheme': 'wombat' }
-let g:lightline = {
-      \ 'component_function': {
-      \   'filename': 'LightlineFilename',
-      \ },
-\ }
-function! LightlineFilename()
-  return expand('%:t') !=# '' ? @% : '[No Name]'
-endfunction
-
-" from http://sheerun.net/2014/03/21/how-to-boost-your-vim-productivity/
-if executable('ag')
-	set grepprg=ag\ --nogroup\ --nocolor
-endif
-if executable('rg')
-	set grepprg=rg\ --no-heading\ --vimgrep
-	set grepformat=%f:%l:%c:%m
-endif
-
-" Javascript
-let javaScript_fold=0
-
-" Linter
-let g:ale_sign_column_always = 1
-" only lint on save
-let g:ale_lint_on_text_changed = 'never'
-let g:ale_lint_on_save = 0
-let g:ale_lint_on_enter = 0
-let g:ale_rust_cargo_use_check = 1
-let g:ale_rust_cargo_check_all_targets = 1
-" let g:neomake_info_sign = {'text': '⚕', 'texthl': 'NeomakeInfoSign'}
-
-" Latex
-let g:latex_indent_enabled = 1
-let g:latex_fold_envs = 0
-let g:latex_fold_sections = []
-
-" Open hotkeys
-map <C-p> :Files<CR>
-nmap <leader>; :Buffers<CR>
-
-" Quick-save
-nmap <leader>w :w<CR>
-
-" Don't confirm .lvimrc
-let g:localvimrc_ask = 0
-
-" language server protocol
-let g:LanguageClient_settingsPath = "~/.vim/settings.json"
-let g:LanguageClient_serverCommands = {
-    \ 'rust': ['env', 'CARGO_TARGET_DIR=~/.cargo/bin/rls', 'rls'],
-    \ 'python': ['~/.local/bin/pyls'],
-    \ 'cpp': ['/usr/bin/clangd-6.0'],
-    \ 'c': ['/usr/bin/clangd-6.0'],
-    \ }
-let g:LanguageClient_autoStart = 1
-nnoremap <silent> K :call LanguageClient_textDocument_hover()<CR>
-nnoremap <silent> gd :call LanguageClient_textDocument_definition()<CR>
-nnoremap <silent> <F2> :call LanguageClient_textDocument_rename()<CR>
-
-" racer + rust
-" https://github.com/rust-lang/rust.vim/issues/192
-let g:rustfmt_command = "rustfmt +nightly"
-let g:rustfmt_autosave = 1
-let g:rustfmt_emit_files = 1
-let g:rustfmt_fail_silently = 0
-let g:rust_clip_command = 'xclip -selection clipboard'
-"let g:racer_cmd = "/usr/bin/racer"
-"let g:racer_experimental_completer = 1
-let $RUST_SRC_PATH = systemlist("rustc --print sysroot")[0] . "/lib/rustlib/src/rust/src"
-
-" Completion
-" autocmd BufEnter * call ncm2#enable_for_buffer()
-set completeopt=noinsert,menuone,noselect
-" tab to select
-" and don't hijack my enter key
-inoremap <expr><Tab> (pumvisible()?(empty(v:completed_item)?"\<C-n>":"\<C-y>"):"\<Tab>")
-inoremap <expr><CR> (pumvisible()?(empty(v:completed_item)?"\<CR>\<CR>":"\<C-y>"):"\<CR>")
-
-" Doxygen
-let mysyntaxfile='~/.vim/doxygen_load.vim'
-
-" Golang
-let g:go_play_open_browser = 0
-let g:go_fmt_fail_silently = 1
-let g:go_fmt_command = "goimports"
-let g:go_bin_path = expand("~/go/bin")
-
-
-" =============================================================================
-" # Editor settings
-" =============================================================================
-filetype plugin indent on
-set autoindent
-set timeoutlen=300 " http://stackoverflow.com/questions/2158516/delay-before-o-opens-a-new-line
-set encoding=utf-8
-set scrolloff=2
-set noshowmode
-set hidden
-set nowrap
-set nojoinspaces
-if (match($TERM, "-256color") != -1) && (match($TERM, "screen-256color") == -1)
-  " screen does not (yet) support truecolor
-  set termguicolors
-endif
-let g:sneak#s_next = 1
-let g:vim_markdown_new_list_item_indent = 0
-let g:vim_markdown_auto_insert_bullets = 0
-let g:vim_markdown_frontmatter = 1
-set printfont=:h10
-set printencoding=utf-8
-set printoptions=paper:letter
-
-" Settings needed for .lvimrc
-set exrc
-set secure
-
-set tags=.git/tags
-
-" Sane splits
-set splitright
-set splitbelow
-
-" Permanent undo
-set undodir=~/.vimdid
-set undofile
-
-" Decent wildmenu
-set wildmenu
-set wildmode=list:longest
-set wildignore=.hg,.svn,*~,*.png,*.jpg,*.gif,*.settings,Thumbs.db,*.min.js,*.swp,publish/*,intermediate/*,*.o,*.hi,Zend,vendor
-
-" Use wide tabs
-set shiftwidth=8
-set softtabstop=8
-set tabstop=8
-set noexpandtab
-
-" Get syntax
-syntax on
-
-" Wrapping options
-set formatoptions=tc " wrap text and comments using textwidth
-set formatoptions+=r " continue comments when pressing ENTER in I mode
-set formatoptions+=q " enable formatting of comments with gq
-set formatoptions+=n " detect lists for formatting
-set formatoptions+=b " auto-wrap in insert mode, and do not wrap old long lines
-
-" Proper search
-set incsearch
-set ignorecase
-set smartcase
-set gdefault
-
-" Search results centered please
-nnoremap <silent> n nzz
-nnoremap <silent> N Nzz
-nnoremap <silent> * *zz
-nnoremap <silent> # #zz
-nnoremap <silent> g* g*zz
-
-" Very magic by default
-nnoremap ? ?\v
-nnoremap / /\v
-cnoremap %s/ %sm/
-
-" =============================================================================
-" # GUI settings
-" =============================================================================
-set guioptions-=T " Remove toolbar
-set vb t_vb= " No more beeps
-set backspace=2 " Backspace over newlines
-set nofoldenable
-set ruler " Where am I?
-set ttyfast
-" https://github.com/vim/vim/issues/1735#issuecomment-383353563
-set lazyredraw
-set synmaxcol=500
-set laststatus=2
-set relativenumber " Relative line numbers
-set number " Also show current absolute line
-set diffopt+=iwhite " No whitespace in vimdiff
-" Make diffing better: https://vimways.org/2018/the-power-of-diff/
-" set diffopt+=algorithm:patience
-" set diffopt+=indent-heuristic
-set colorcolumn=80 " and give me a colored column
-set showcmd " Show (partial) command in status line.
-set mouse=a " Enable mouse usage (all modes) in terminals
-set shortmess+=c " don't give |ins-completion-menu| messages.
-
-" Colors
-set background=dark
-colorscheme base16-atelier-dune
-hi Normal ctermbg=NONE
-
-" Show those damn hidden characters
-" Verbose: set listchars=nbsp:¬,eol:¶,extends:»,precedes:«,trail:•
-set nolist
-set listchars=nbsp:¬,extends:»,precedes:«,trail:•
-
-" =============================================================================
-" # Keyboard shortcuts
-" =============================================================================
-" ; as :
-nnoremap ; :
-
-" Ctrl+c and Ctrl+j as Esc
-inoremap <C-j> <Esc>
-vnoremap <C-j> <Esc>
-inoremap <C-c> <Esc>
-vnoremap <C-c> <Esc>
-
-" Suspend with Ctrl+f
-inoremap <C-f> :sus<cr>
-vnoremap <C-f> :sus<cr>
-nnoremap <C-f> :sus<cr>
-
-" Jump to start and end of line using the home row keys
-map H ^
-map L $
-
-" Neat X clipboard integration
-" ,p will paste clipboard into buffer
-" ,c will copy entire buffer into clipboard
-noremap <leader>p :read !xsel --clipboard --output<cr>
-noremap <leader>c :w !xsel -ib<cr><cr>
-
-" <leader>s for Rg search
-noremap <leader>s :Rg
-let g:fzf_layout = { 'down': '~20%' }
-command! -bang -nargs=* Rg
-  \ call fzf#vim#grep(
-  \   'rg --column --line-number --no-heading --color=always '.shellescape(<q-args>), 1,
-  \   <bang>0 ? fzf#vim#with_preview('up:60%')
-  \           : fzf#vim#with_preview('right:50%:hidden', '?'),
-  \   <bang>0)
-
-function! s:list_cmd()
-  let base = fnamemodify(expand('%'), ':h:.:S')
-  return base == '.' ? 'fd --type file --follow' : printf('fd --type file --follow | proximity-sort %s', expand('%'))
-endfunction
-
-command! -bang -nargs=? -complete=dir Files
-  \ call fzf#vim#files(<q-args>, {'source': s:list_cmd(),
-  \                               'options': '--tiebreak=index'}, <bang>0)
-
-
-" Open new file adjacent to current file
-nnoremap <leader>e :e <C-R>=expand("%:p:h") . "/" <CR>
-
-" No arrow keys --- force yourself to use the home row
-nnoremap <up> <nop>
-nnoremap <down> <nop>
-inoremap <up> <nop>
-inoremap <down> <nop>
-inoremap <left> <nop>
-inoremap <right> <nop>
-
-" Left and right can switch buffers
-nnoremap <left> :bp<CR>
-nnoremap <right> :bn<CR>
-
-" Move by line
-nnoremap j gj
-nnoremap k gk
-
-" Jump to next/previous error
-nnoremap <C-j> :cnext<cr>
-nnoremap <C-k> :cprev<cr>
-nmap <silent> L <Plug>(ale_lint)
-"nmap <silent> <C-k> <Plug>(ale_previous_wrap)
-"nmap <silent> <C-j> <Plug>(ale_next_wrap)
-nnoremap <C-l> :copen<cr>
-nnoremap <C-g> :cclose<cr>
-
-" <leader><leader> toggles between buffers
-nnoremap <leader><leader> <c-^>
-
-" <leader>= reformats current tange
-nnoremap <leader>= :'<,'>RustFmtRange<cr>
-
-" <leader>, shows/hides hidden characters
-nnoremap <leader>, :set invlist<cr>
-
-" <leader>q shows stats
-nnoremap <leader>q g<c-g>
-
-" Keymap for replacing up to next _ or -
-noremap <leader>m ct_
-noremap <leader>n ct-
-
-" M to make
-noremap M :!make -k -j4<cr>
-
-" I can type :help on my own, thanks.
-map <F1> <Esc>
-imap <F1> <Esc>
-
-
-" =============================================================================
-" # Autocommands
-" =============================================================================
-
-" Prevent accidental writes to buffers that shouldn't be edited
-autocmd BufRead *.orig set readonly
-autocmd BufRead *.pacnew set readonly
-
-" Leave paste mode when leaving insert mode
-autocmd InsertLeave * set nopaste
-
-" Jump to last edit position on opening file
-if has("autocmd")
-  " https://stackoverflow.com/questions/31449496/vim-ignore-specifc-file-in-autocommand
-  au BufReadPost * if expand('%:p') !~# '\m/\.git/' && line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
-endif
-
-" Auto-make less files on save
-autocmd BufWritePost *.less if filereadable("Makefile") | make | endif
-
-" Follow Rust code style rules
-au Filetype rust source ~/.vim/scripts/spacetab.vim
-au Filetype rust set colorcolumn=100
-
-" Help filetype detection
-autocmd BufRead *.plot set filetype=gnuplot
-autocmd BufRead *.md set filetype=markdown
-autocmd BufRead *.lds set filetype=ld
-autocmd BufRead *.tex set filetype=tex
-autocmd BufRead *.trm set filetype=c
-autocmd BufRead *.xlsx.axlsx set filetype=ruby
-
-" Script plugins
-autocmd Filetype html,xml,xsl,php source ~/.vim/scripts/closetag.vim
-
-" =============================================================================
-" # Footer
-" =============================================================================
-
-" nvim
-if has('nvim')
-	runtime! plugin/python_setup.vim
-endif
+syntax on                   " Enable syntax highlighting
+set background=dark        " Assume dark background
+colorscheme base16-default-dark " Set color theme
+
+" Statusline colors
+hi def User1 ctermbg=18 ctermfg=20 cterm=bold
+hi def User2 ctermbg=18 ctermfg=1 cterm=bold
+hi def User3 ctermbg=18 ctermfg=20
+hi StatusLine ctermbg=18 ctermfg=20
+hi StatusLineNC ctermbg=18 ctermfg=8
+
+" Completion popup colors
+hi Pmenu ctermbg=19 ctermfg=7
+hi PmenuSel ctermbg=17 ctermfg=15
+hi PmenuSbar ctermbg=19 ctermfg=19
+hi PmenuThumb ctermbg=8 ctermfg=8
+
+" Search colors
+hi Search ctermbg=0 ctermfg=15 cterm=bold
+hi IncSearch ctermbg=9 ctermfg=15 cterm=bold
+
+" Tab line colors
+hi TabLineSel ctermbg=19 ctermfg=16 cterm=bold
+hi TabLineFill ctermbg=18 ctermfg=20
+hi TabLine ctermbg=18 ctermfg=20
+
+" Other GUI colors
+hi VertSplit ctermbg=0 ctermfg=19
+hi CursorLine ctermbg=19
+hi MatchParen ctermbg=0 ctermfg=15 cterm=bold,underline
+hi WildMenu ctermbg=18 ctermfg=16 cterm=bold
