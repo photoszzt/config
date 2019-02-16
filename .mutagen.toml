@@ -1,0 +1,12 @@
+[ignore]
+vcs = true
+default = [
+  "build",
+  "CMakeFiles",
+  "tags",
+  "*.log",
+  "CMakeCache.txt",
+]
+
+[symlink]
+mode = "ignore"
