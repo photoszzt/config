@@ -386,6 +386,10 @@ autocmd FileType python
 autocmd FileType toml
   \   setl shiftwidth=2 tabstop=2
 
+" Go language
+Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
+
+
 call plug#end()
 
 
