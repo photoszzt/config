@@ -1,0 +1,11 @@
+antigen use oh-my-zsh
+
+antigen bundle git
+antigen bundle command-not-found
+antigen bundle zsh-users/zsh-syntax-highlighting # Syntax highlighting bundle
+antigen bundle zsh-users/zsh-autosuggestions # Fish-like auto suggestions
+antigen bundle zsh-users/zsh-completions # Extra zsh completions
+
+antigen theme robbyrussell
+
+antigen apply
