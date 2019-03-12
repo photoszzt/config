@@ -235,6 +235,7 @@ Plug 'tpope/vim-repeat'                " Smarter . key
 Plug 'tpope/vim-rsi'                   " Readline style mappings in insert mode
 Plug 'tpope/vim-sleuth'                " Heuristically set buffer options
 Plug 'tpope/vim-unimpaired'            " Pairs of handy [ and ] mappings
+Plug 'haya14busa/is.vim'               " improved incremental search
 
 " Strip modified lines
 Plug 'tweekmonster/wstrip.vim'
@@ -294,19 +295,20 @@ nnoremap <silent> t :TComment<CR>j
 vnoremap <silent> t :TComment<CR>
 
 " Fuzzy completion
-Plug 'junegunn/fzf', { 'dir': '~/.fzf' }
-Plug 'junegunn/fzf.vim'
-let g:fzf_layout = {}
-let g:fzf_buffers_jump = 1
-nnoremap <silent> <C-j> :Buffers<CR>
-nnoremap <silent> <C-k> :Buffers<CR>
-nnoremap <silent> <space>a :Ag<CR>
-nnoremap <silent> <space>e :Files<CR>
-nnoremap <silent> <space>l :BLines<CR>
-nnoremap <silent> <space>h :History<CR>
-nnoremap <silent> <space>; :Commands<CR>
-nnoremap <silent> <space>: :Commands<CR>
-nnoremap <silent> <space>` :Marks<CR>
+Plug 'Yggdroot/LeaderF', { 'do': './install.sh' }
+let g:Lf_ShowRelativePath = 0
+let g:Lf_HideHelp = 1
+let g:Lf_PreviewResult = {'Function':0, 'Colorscheme':1}
+
+let g:Lf_NormalMap = {
+	\ "File":   [["<ESC>", ':exec g:Lf_py "fileExplManager.quit()"<CR>']],
+	\ "Buffer": [["<ESC>", ':exec g:Lf_py "bufExplManager.quit()"<CR>']],
+	\ "Mru":    [["<ESC>", ':exec g:Lf_py "mruExplManager.quit()"<CR>']],
+	\ "Tag":    [["<ESC>", ':exec g:Lf_py "tagExplManager.quit()"<CR>']],
+	\ "Function":    [["<ESC>", ':exec g:Lf_py "functionExplManager.quit()"<CR>']],
+	\ "Colorscheme":    [["<ESC>", ':exec g:Lf_py "colorschemeExplManager.quit()"<CR>']],
+	\ }
+noremap <F2> :LeaderfFunction!<cr>
 
 " Real-time linting
 Plug 'w0rp/ale'
