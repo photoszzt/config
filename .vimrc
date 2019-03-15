@@ -297,7 +297,6 @@ vnoremap <silent> t :TComment<CR>
 " Fuzzy completion
 Plug 'Yggdroot/LeaderF', { 'do': './install.sh' }
 let g:Lf_ShowRelativePath = 0
-let g:Lf_HideHelp = 1
 let g:Lf_PreviewResult = {'Function':0, 'Colorscheme':1}
 
 let g:Lf_NormalMap = {
@@ -308,6 +307,18 @@ let g:Lf_NormalMap = {
 	\ "Function":    [["<ESC>", ':exec g:Lf_py "functionExplManager.quit()"<CR>']],
 	\ "Colorscheme":    [["<ESC>", ':exec g:Lf_py "colorschemeExplManager.quit()"<CR>']],
 	\ }
+" search word under cursor, the pattern is treated as regex, and enter normal mode directly
+noremap <C-F> :<C-U><C-R>=printf("Leaderf! rg -e %s ", expand("<cword>"))<CR>
+" search word under cursor, the pattern is treated as regex,
+" append the result to previous search results.
+noremap <C-G> :<C-U><C-R>=printf("Leaderf! rg --append -e %s ", expand("<cword>"))<CR>
+" search word under cursor literally only in current buffer
+noremap <C-B> :<C-U><C-R>=printf("Leaderf! rg -F --current-buffer -e %s ", expand("<cword>"))<CR>
+" search visually selected text literally, don't quit LeaderF after accepting an entry
+xnoremap gf :<C-U><C-R>=printf("Leaderf! rg -F --stayOpen -e %s ", leaderf#Rg#visual())<CR>
+" recall last search. If the result window is closed, reopen it.
+noremap go :<C-U>Leaderf! rg --stayOpen --recall<CR>
+
 noremap <F2> :LeaderfFunction!<cr>
 
 " Real-time linting
