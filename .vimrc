@@ -331,11 +331,6 @@ nmap [w <plug>(ale_previous_wrap)
 hi link ALEError Default
 hi link ALEWarning Default
 
-" Automatic tag file generation
-Plug 'ludovicchabant/vim-gutentags'
-let g:gutentags_project_root = ['.root']
-let g:gutentags_ctags_exclude = ['*CMakeFiles*', '.ycm_extra_conf.py']
-
 " Completion engine
 Plug 'Valloric/YouCompleteMe',
       \ { 'do': './install.py --clang-completer --rust-completer' }
@@ -385,7 +380,7 @@ Plug 'octol/vim-cpp-enhanced-highlight'
 set cinoptions+=g1 " Indent scope declarations by 1 space
 set cinoptions+=h1 " Indent stuff after scope declarations by 1 more space
 autocmd FileType c,cpp
-  \   setl shiftwidth=4 tabstop=4
+  \   setl shiftwidth=8 tabstop=8
 
 " Java language
 autocmd FileType java
@@ -405,13 +400,11 @@ Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 " gutentags
 Plug 'ludovicchabant/vim-gutentags'
 Plug 'skywind3000/gutentags_plus'
-" gutentags 搜索工程目录的标志，当前文件路径向上递归直到碰到这些文件/目录名
 let g:gutentags_project_root = ['.root', '.svn', '.git', '.hg', '.project']
+let g:gutentags_ctags_exclude = ['*CMakeFiles*', '.ycm_extra_conf.py']
 
-" 所生成的数据文件的名称
 let g:gutentags_ctags_tagfile = '.tags'
 
-" 同时开启 ctags 和 gtags 支持：
 let g:gutentags_modules = []
 if executable('ctags')
 	let g:gutentags_modules += ['ctags']
@@ -423,13 +416,23 @@ endif
 " generate datebases in my cache directory, prevent gtags files polluting my project
 let g:gutentags_cache_dir = expand('~/.cache/tags')
 
-" 配置 ctags 的参数
 let g:gutentags_ctags_extra_args = ['--fields=+niazS', '--extra=+q']
 let g:gutentags_ctags_extra_args += ['--c++-kinds=+px']
 let g:gutentags_ctags_extra_args += ['--c-kinds=+px']
 
-" 禁用 gutentags 自动加载 gtags 数据库的行为
 let g:gutentags_auto_add_gtags_cscope = 0
+
+" remap key
+let g:gutentags_plus_nomap = 1
+noremap <silent> <leader>cs :GscopeFind s <C-R><C-W><cr>
+noremap <silent> <leader>cg :GscopeFind g <C-R><C-W><cr>
+noremap <silent> <leader>gc :GscopeFind c <C-R><C-W><cr>
+noremap <silent> <leader>gt :GscopeFind t <C-R><C-W><cr>
+noremap <silent> <leader>ge :GscopeFind e <C-R><C-W><cr>
+noremap <silent> <leader>gf :GscopeFind f <C-R>=expand("<cfile>")<cr><cr>
+noremap <silent> <leader>gi :GscopeFind i <C-R>=expand("<cfile>")<cr><cr>
+noremap <silent> <leader>gd :GscopeFind d <C-R><C-W><cr>
+noremap <silent> <leader>ga :GscopeFind a <C-R><C-W><cr>
 
 " preview
 Plug 'skywind3000/vim-preview'
@@ -453,6 +456,9 @@ call plug#end()
 "gtags
 let $GTAGSLABEL = 'native-pygments'
 let $GTAGSCONF = '/home/zhitingz/.globalrc'
+
+" show tabs
+set listchars=tab:!·,trail:·
 
 
 syntax on                   " Enable syntax highlighting
