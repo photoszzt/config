@@ -451,6 +451,25 @@ autocmd FileType qf nnoremap <silent><buffer> P :PreviewClose<cr>
 noremap <F4> :PreviewSignature!<cr>
 inoremap <F4> <c-\><c-o>:PreviewSignature!<cr>
 
+" latex
+Plug 'lervag/vimtex'
+let g:tex_flavor='latex'
+let g:vimtex_view_method='mupdf'
+let g:vimtex_quickfix_mode=0
+set conceallevel=1
+let g:tex_conceal='abdmg'
+
+" snips
+" track the engine
+Plug 'SirVer/ultisnips'
+
+" Snippets are separated from the engine. Add this if you want them:
+Plug 'honza/vim-snippets'
+
+let g:UltiSnipsExpandTrigger="<c-j>"
+let g:UltiSnipsJumpForwardTrigger="<c-j>"
+let g:UltiSnipsJumpBackwardTrigger="<c-k>"
+
 call plug#end()
 
 "gtags
