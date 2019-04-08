@@ -333,7 +333,7 @@ hi link ALEWarning Default
 
 " Completion engine
 Plug 'Valloric/YouCompleteMe',
-      \ { 'do': './install.py --clang-completer --rust-completer' }
+      \ { 'do': './install.py --clang-completer --go-completer --rust-completer' }
 augroup load_ycm
   " Load plugin when entering insert mode.
   au! InsertEnter *
