@@ -356,25 +356,6 @@ Plug 'Shougo/neco-vim'
 Plug 'vim-scripts/bash-support.vim'
 autocmd Filetype sh setlocal tabstop=4 shiftwidth=4 expandtab
 
-" Rust language
-Plug 'rust-lang/rust.vim'
-Plug 'racer-rust/vim-racer'
-Plug 'sebastianmarkow/deoplete-rust'
-let g:deoplete#sources#rust#disable_keymap = 1
-let g:racer_experimental_completer = 1
-let g:racer_no_default_keymappings = 1
-let g:tagbar_type_rust = {
-  \   'ctagstype' : 'rust',
-  \   'sort' : '0',
-  \   'kinds' : [ 'm:modules', 'c:consts', 'T:types', 'g:enums',
-  \               's:structs', 't:traits', 'i:impls', 'f:functions' ]
-  \ }
-autocmd FileType rust
-  \   setl colorcolumn=100
-  \ | setl sw=4 ts=4 expandtab
-  \ | compiler cargo
-  \ | inoremap <buffer><expr><CR> "\<CR>" . <SID>complete_braces()
-
 " C++ language
 Plug 'octol/vim-cpp-enhanced-highlight'
 set cinoptions+=g1 " Indent scope declarations by 1 space
@@ -400,8 +381,8 @@ Plug 'fatih/vim-go', { 'do': ':GoUpdateBinaries' }
 " gutentags
 Plug 'ludovicchabant/vim-gutentags'
 Plug 'skywind3000/gutentags_plus'
-let g:gutentags_project_root = ['.root', '.svn', '.git', '.hg', '.project']
-let g:gutentags_ctags_exclude = ['*CMakeFiles*', '.ycm_extra_conf.py']
+let g:gutentags_project_root = ['.root', '.svn', '.git', '.hg', '.project', 'Cargo.toml']
+let g:gutentags_ctags_exclude = ['*CMakeFiles*', '.ycm_extra_conf.py', '*txt']
 
 let g:gutentags_ctags_tagfile = '.tags'
 
@@ -433,6 +414,25 @@ noremap <silent> <leader>gf :GscopeFind f <C-R>=expand("<cfile>")<cr><cr>
 noremap <silent> <leader>gi :GscopeFind i <C-R>=expand("<cfile>")<cr><cr>
 noremap <silent> <leader>gd :GscopeFind d <C-R><C-W><cr>
 noremap <silent> <leader>ga :GscopeFind a <C-R><C-W><cr>
+
+" Rust language
+Plug 'rust-lang/rust.vim'
+Plug 'racer-rust/vim-racer'
+Plug 'sebastianmarkow/deoplete-rust'
+let g:deoplete#sources#rust#disable_keymap = 1
+let g:racer_experimental_completer = 1
+let g:rustfmt_autosave = 1
+set hidden
+let g:racer_cmd = "/home/zhitingz/.cargo/bin/racer"
+au FileType rust nmap gd <Plug>(rust-def)
+au FileType rust nmap gs <Plug>(rust-def-split)
+au FileType rust nmap gx <Plug>(rust-def-vertical)
+au FileType rust nmap <leader>gd <Plug>(rust-doc)
+autocmd FileType rust
+  \   setl colorcolumn=100
+  \ | setl sw=4 ts=4 expandtab
+  \ | compiler cargo
+  \ | inoremap <buffer><expr><CR> "\<CR>" . <SID>complete_braces()
 
 " preview
 Plug 'skywind3000/vim-preview'

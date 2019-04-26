@@ -1,6 +1,7 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhist_cnt =4
+let g:netrw_dirhist_cnt =5
 let g:netrw_dirhist_1='/home/zhitingz/.vim'
 let g:netrw_dirhist_2='/home/zhitingz/config/.git_template'
 let g:netrw_dirhist_3='/home/zhitingz/config/.git_template/hooks'
 let g:netrw_dirhist_4='/home/zhitingz/.fzf'
+let g:netrw_dirhist_5='/mnt/data/src/nvml/workspace/nvml/src/persistent_memory/file_backed_memory'
