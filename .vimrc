@@ -231,6 +231,7 @@ Plug 'adelarsq/vim-matchit'            " Smarter bracket matching
 Plug 'mhinz/vim-signify'               " Show changed lines (VCS-backed)
 Plug 'rbgrouleff/bclose.vim'           " Buffer-close (common dependency)
 Plug 'sheerun/vim-polyglot'            " Language pack
+let g:polyglot_disabled = ['latex']
 Plug 'tpope/vim-eunuch'                " Useful file management commands
 Plug 'tpope/vim-repeat'                " Smarter . key
 Plug 'tpope/vim-rsi'                   " Readline style mappings in insert mode
